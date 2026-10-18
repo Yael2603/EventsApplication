@@ -1,0 +1,8 @@
+<Project>
+  <!-- הגדרות משותפות לכל הפרויקטים. אם מותקן אצלך .NET 9 או 10, מחליפים כאן את net8.0 (מקום אחד בלבד). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>
