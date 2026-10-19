@@ -107,6 +107,7 @@ public class AppDbContext : DbContext
     }
 
     // PostgreSQL אין rowversion, ולכן Version של CompanyDay מתחלף ידנית בכל עדכון
+    //kvchi
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         RefreshDayVersions();
