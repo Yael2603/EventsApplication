@@ -6,6 +6,7 @@ public interface ICategoryRepository               // גישה לקטגוריו�
 {
     Task<List<Category>> GetAllAsync(CancellationToken cancellationToken);              // קיימת: כל הקטגוריות
     Task<bool> ExistsAsync(int id, CancellationToken cancellationToken);                // קיימת: האם קטגוריה קיימת
+    Task<int> CountExistingAsync(IReadOnlyCollection<int> ids, CancellationToken ct);  // כמה מהמזהים קיימים, בשאילתה אחת (במקום שאילתה לכל מזהה)
     Task<Category?> GetByIdAsync(int id, CancellationToken ct);                         // חדש: קטגוריה במעקב (לעדכון/מחיקה)
     Task<bool> NameExistsAsync(string name, int? excludeId, CancellationToken ct);      // חדש: האם שם תפוס (מתעלם מקטגוריה מסוימת, לשינוי שם)
     Task<bool> IsInUseAsync(int id, CancellationToken ct);                              // חדש: האם יש ספקים או סעיפים בקטגוריה

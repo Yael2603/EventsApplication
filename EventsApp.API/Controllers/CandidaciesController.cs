@@ -19,7 +19,7 @@ public class CandidaciesController : ControllerBase
     public async Task<ActionResult<CandidacyDto>> Apply([FromBody] CreateCandidacyDto dto, CancellationToken ct)
     {
         var result = await _candidacies.ApplyAsync(User.GetUserId(), dto, ct);  // הספק מהטוקן
-        return StatusCode(StatusCodes.Status201Created, result);                // 201 (אין כתובת "קריאה בודדת" למועמדות)
+        return Created("/api/candidacies/my", result);                         // 201 + Location לרשימת המועמדויות של הספק, שבה מופיעה החדשה
     }
 
     [HttpGet("my")]                                 // GET /api/candidacies/my

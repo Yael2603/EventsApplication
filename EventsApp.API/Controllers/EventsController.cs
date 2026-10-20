@@ -46,5 +46,5 @@ public class EventsController : ControllerBase
     [HttpPost("{id:int}/items")]                    // POST /api/events/5/items
     [Authorize(Roles = nameof(UserRole.Client))]    // לקוח בלבד
     public async Task<ActionResult<EventItemDto>> AddItem([FromRoute] int id, [FromBody] CreateEventItemDto dto, CancellationToken ct)
-        => StatusCode(StatusCodes.Status201Created, await _events.AddItemAsync(User.GetUserId(), id, dto, ct));     // 201
+        => Created($"/api/events/{id}", await _events.AddItemAsync(User.GetUserId(), id, dto, ct));     // 201 + Location לאירוע שהסעיף נוסף אליו
 }

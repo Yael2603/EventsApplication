@@ -21,6 +21,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();                    // מבטל את ספקי הלוג המובנים, כדי ש-NLog יהיה היחיד
 builder.Host.UseNLog();                             // כל ILogger באפליקציה כותב דרך NLog (קונסול וקובץ), לפי nlog.config
 
+if (builder.Environment.IsDevelopment() && NLog.LogManager.Configuration is { } nlogConfig)   // בפיתוח (ואם nlog.config נטען) רוצים לראות גם הודעות Debug
+{
+    nlogConfig.Variables["minLevel"] = "Debug";     // מוריד את הרמה המינימלית שמוגדרת ב-nlog.config
+    NLog.LogManager.ReconfigExistingLoggers();      // מחיל את השינוי על כל ה-loggers שכבר נוצרו
+}
+
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 

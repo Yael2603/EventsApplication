@@ -50,14 +50,15 @@ public class EventServiceTests                              // בדיקות יח
     [Fact]
     public async Task Create_UnknownCategory_ThrowsBadRequest()
     {
-        _categories.Setup(c => c.ExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(false);    // הקטגוריה לא קיימת
+        _categories.Setup(c => c.CountExistingAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);    // הקטגוריה לא קיימת
         await Assert.ThrowsAsync<BadRequestException>(() => Sut().CreateAsync(1, ValidDto(), CancellationToken.None));
     }
 
     [Fact]
     public async Task Create_DateNotInCalendar_ThrowsBadRequest()
     {
-        _categories.Setup(c => c.ExistsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _categories.Setup(c => c.CountExistingAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<int> ids, CancellationToken _) => ids.Count);    // כל הקטגוריות קיימות
         _calendar.Setup(c => c.GetForUpdateAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ReturnsAsync((CompanyDay?)null);   // אין יום כזה בלוח
         await Assert.ThrowsAsync<BadRequestException>(() => Sut().CreateAsync(1, ValidDto(), CancellationToken.None));
     }
@@ -66,7 +67,8 @@ public class EventServiceTests                              // בדיקות יח
     public async Task Create_DayAlreadyTaken_ThrowsConflict_AndNeverSaves()
     {
         var dto = ValidDto();
-        _categories.Setup(c => c.ExistsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _categories.Setup(c => c.CountExistingAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<int> ids, CancellationToken _) => ids.Count);    // כל הקטגוריות קיימות
         _calendar.Setup(c => c.GetForUpdateAsync(dto.Date, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CompanyDay { Date = dto.Date, IsTaken = true, Version = Guid.NewGuid() });    // היום כבר תפוס
         await Assert.ThrowsAsync<ConflictException>(() => Sut().CreateAsync(1, dto, CancellationToken.None));  // 409
@@ -82,7 +84,8 @@ public class EventServiceTests                              // בדיקות יח
         var dto = ValidDto();
         var day = new CompanyDay { Date = dto.Date, IsTaken = false, Version = Guid.NewGuid() };    // יום פנוי
         Event? added = null;                                // כאן ייתפס האירוע שנוסף
-        _categories.Setup(c => c.ExistsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _categories.Setup(c => c.CountExistingAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<int> ids, CancellationToken _) => ids.Count);    // כל הקטגוריות קיימות
         _calendar.Setup(c => c.GetForUpdateAsync(dto.Date, It.IsAny<CancellationToken>())).ReturnsAsync(day);
         _events.Setup(e => e.Add(It.IsAny<Event>())).Callback<Event>(e => added = e);       // לוכד את האירוע שנוסף
         _events.Setup(e => e.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))

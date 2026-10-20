@@ -21,7 +21,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterRequestDto dto, CancellationToken ct)
     {
         var result = await _auth.RegisterAsync(dto, ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        return Created("/api/users/me", result);    // 201 + Location לפרופיל המשתמש החדש
     }
 
     [HttpPost("register-provider")]
@@ -29,7 +29,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<AuthResponseDto>> RegisterProvider([FromBody] RegisterProviderRequestDto dto, CancellationToken ct)
     {
         var result = await _auth.RegisterProviderAsync(dto, ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        return Created("/api/providers/me", result);    // 201 + Location לפרופיל הספק החדש
     }
 
     [HttpPost("login")]

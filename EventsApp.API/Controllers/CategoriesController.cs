@@ -25,7 +25,7 @@ public class CategoriesController : ControllerBase
     [HttpPost]                                      // POST /api/categories
     [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד
     public async Task<ActionResult<CategoryDto>> Create([FromBody] SaveCategoryDto dto, CancellationToken ct)
-        => StatusCode(StatusCodes.Status201Created, await _categories.CreateAsync(dto, ct));    // 201
+        => Created("/api/categories", await _categories.CreateAsync(dto, ct));    // 201 + Location לרשימת הקטגוריות
 
     [HttpPut("{id:int}")]                           // PUT /api/categories/4
     [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד

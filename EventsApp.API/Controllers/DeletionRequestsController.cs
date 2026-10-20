@@ -16,7 +16,7 @@ public class DeletionRequestsController : ControllerBase
     [HttpPost("api/events/{eventId:int}/deletion-request")]     // POST /api/events/5/deletion-request
     [Authorize(Roles = nameof(UserRole.Client))]    // לקוח בלבד (הבעלות נבדקת בשירות)
     public async Task<ActionResult<DeletionRequestDto>> Create([FromRoute] int eventId, [FromBody] CreateDeletionRequestDto dto, CancellationToken ct)
-        => StatusCode(StatusCodes.Status201Created, await _requests.CreateAsync(User.GetUserId(), eventId, dto, ct));  // 201
+        => Created($"/api/events/{eventId}", await _requests.CreateAsync(User.GetUserId(), eventId, dto, ct));  // 201 + Location לאירוע שעליו הוגשה הבקשה
 
     [HttpGet("api/deletion-requests")]              // GET /api/deletion-requests?status=Pending
     [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד

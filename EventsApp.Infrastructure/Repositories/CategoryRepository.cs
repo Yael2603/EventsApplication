@@ -20,6 +20,9 @@ public class CategoryRepository : ICategoryRepository
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken) =>
         _db.Categories.AnyAsync(c => c.Id == id, cancellationToken);                        // קיימת, ללא שינוי
 
+    public Task<int> CountExistingAsync(IReadOnlyCollection<int> ids, CancellationToken ct) =>
+        _db.Categories.CountAsync(c => ids.Contains(c.Id), ct);    // SELECT COUNT(*) ... WHERE Id IN (...) - שאילתה אחת לכל הרשימה
+
     public Task<Category?> GetByIdAsync(int id, CancellationToken ct) =>
         _db.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);        // במעקב, כדי ששינוי שם או מחיקה יישמרו
 

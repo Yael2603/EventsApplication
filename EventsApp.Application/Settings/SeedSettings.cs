@@ -7,4 +7,5 @@ public class SeedSettings
     public string AdminEmail { get; set; } = string.Empty;
     public string AdminPassword { get; set; } = string.Empty;
     public string AdminFullName { get; set; } = "מנהל מערכת";
+    public bool DemoUsers { get; set; }             // האם ליצור משתמשי דמו (מופעל רק ב-appsettings.Development.json)
 }

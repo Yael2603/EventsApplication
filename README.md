@@ -124,7 +124,7 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 2. לשדה `CompanyDay.Version` יש `[ConcurrencyCheck]`, והוא מוחלף בכל עדכון. אם שני לקוחות קראו את היום כפנוי, הראשון שומר והשני נכשל ב-`DbUpdateConcurrencyException` ← `ConcurrencyException` ← **409**.
 3. אינדקס ייחודי על `Event.Date` הוא רשת ביטחון אחרונה (שגיאת PostgreSQL `23505` ← `ConflictException` ← **409**).
 
-תפיסת היום ויצירת האירוע נשמרות ב-`SaveChanges` אחד, ולכן או שהכול נשמר או שאין שינוי.
+הבדיקה העסקית (קריאת היום ובדיקת `IsTaken`) והשמירה רצות בתוך **טרנזקציה מפורשת אחת** (`BeginTransaction` ← `Commit`, ו-`Rollback` בכל כישלון), ולכן או שהכול נשמר או שאין שינוי. כל התנגשות נרשמת ביומן ברמת **Warning**, והלקוח מקבל 409 עם הודעה ברורה ומרענן את הלוח.
 
 ---
 
@@ -200,6 +200,14 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 - התשובה בפורמט **`ProblemDetails`** וכוללת `correlationId`.
 - **`CorrelationIdMiddleware`** קורא או יוצר את הכותרת `X-Correlation-ID` (לאחר ניקוי תווים), מחזיר אותה בתשובה, ומוסיף אותה להיקף הלוגים, כך שאפשר לאתר את כל השורות של בקשה אחת.
 - ולידציה אוטומטית של DTOs (`[ApiController]` ו-Data Annotations) מחזירה 400.
+- סדר ה-pipeline: `ExceptionMiddleware` ראשון, אחריו `CorrelationIdMiddleware`, ו-`UseAuthentication` לפני `UseAuthorization`.
+
+**לוגים (NLog, הגדרות ב-`nlog.config`):** הקוד משתמש ב-`ILogger` הרגיל, ו-NLog כותב לקונסול ולקובץ יומי (`logs/`). כל שורה כוללת את ה-CorrelationId.
+- **Information:** כל בקשה נכנסת, וסיום הבקשה עם קוד התשובה ומשך הזמן.
+- **Warning:** חריג שטופל (4xx), וכל התנגשות על משאב (`Concurrency conflict`, `Unique constraint conflict`).
+- **Error:** כשל לא צפוי (500), עם פרטי החריגה.
+- **Debug:** פרטי פיתוח (פתיחה, אישור וביטול של טרנזקציה). פעיל רק בסביבת Development.
+- לא נכתבים ליומן סיסמאות, טוקנים או גוף בקשות הרשמה.
 
 ---
 
@@ -220,9 +228,10 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 | `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpirationMinutes` | פרטי הטוקן | `appsettings.json` |
 | `ConnectionStrings:DefaultConnection` | חיבור ל-PostgreSQL | User Secrets / משתנה סביבה |
 | `Seed:AdminEmail`, `Seed:AdminPassword`, `Seed:AdminFullName` | האדמין היחיד | User Secrets / משתנה סביבה |
+| `Seed:DemoUsers` | יצירת משתמשי דמו | `appsettings.Development.json` (true) |
 | `Cors:AllowedOrigins` | כתובות הקליינט המורשות | `appsettings.json` / משתנה סביבה |
 
-בהפעלה ראשונה (ואחריה בכל הפעלה, בצורה בטוחה לחזרה) המערכת מחילה מיגרציות ומזינה: 8 קטגוריות התחלתיות, ימי לוח לשנה קדימה, והאדמין.
+בהפעלה ראשונה (ואחריה בכל הפעלה, בצורה בטוחה לחזרה) המערכת מחילה מיגרציות ומזינה: 8 קטגוריות התחלתיות, ימי לוח לשנה קדימה, האדמין, ובסביבת פיתוח גם משתמשי דמו (`Seed:DemoUsers` ב-`appsettings.Development.json`).
 
 ---
 
@@ -252,11 +261,9 @@ docker run --name eventsapp-db -e POSTGRES_PASSWORD=<סיסמה> -e POSTGRES_DB=
 cd EventsApp.API
 dotnet user-secrets set "Jwt:Key" "<מחרוזת אקראית של 32 תווים לפחות>"
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=eventsapp;Username=postgres;Password=<סיסמה>"
-dotnet user-secrets set "Seed:AdminEmail" "<אימייל האדמין>"
-dotnet user-secrets set "Seed:AdminPassword" "<סיסמה חזקה>"
-dotnet user-secrets set "Seed:AdminFullName" "<שם האדמין>"
 cd ..
 ```
+אופציונלי: מנהל אמיתי במקום מנהל הדמו (`Seed:AdminEmail`, `Seed:AdminPassword`, `Seed:AdminFullName`, באותה צורה).
 לבדיקה (בלי להדביק את הפלט בשום מקום): `dotnet user-secrets list --project EventsApp.API`.
 
 **3. בנייה והרצה של השרת:**
@@ -282,6 +289,18 @@ npm run dev
 האתר זמין ב-http://localhost:5173. כתובת ה-API נקבעת ב-`.env.development` (`VITE_API_URL=http://localhost:8080`), ויש להפעיל מחדש את `npm run dev` אחרי כל שינוי בקובץ.
 
 **6. שימוש ב-Swagger עם טוקן:** `POST /api/auth/login`, להעתיק את `token`, ללחוץ **Authorize** ולהדביק אותו.
+
+### משתמשי דמו (סביבת Development)
+
+בהרצה מקומית (`ASPNETCORE_ENVIRONMENT=Development`) ה-Seed יוצר משתמש לכל תפקיד, כדי שאפשר יהיה לבדוק את המערכת מיד. בייצור (Render) הם לא נוצרים.
+
+| תפקיד | אימייל | סיסמה | הערה |
+|---|---|---|---|
+| Admin | `admin@demo.local` | `Demo1234!` | נוצר רק אם לא הוגדר `Seed:AdminEmail` |
+| Client | `client@demo.local` | `Demo1234!` | יכול להזמין אירוע ביום פנוי |
+| Provider | `provider@demo.local` | `Demo1234!` | ספק מאושר בקטגוריה הראשונה, יכול להגיש מועמדות |
+
+**תרחיש בדיקה של המשאב המוגבל:** להתחבר כ-`client@demo.local` בשני דפדפנים, לבחור באותו תאריך ולשלוח כמעט יחד. הראשון מקבל 201, והשני מקבל 409 והודעה שהתאריך נתפס.
 
 ---
 
@@ -364,6 +383,6 @@ dotnet test
 ## מצב הפרויקט
 
 - **הושלם:** תשתית (ארכיטקטורה, DB, JWT, Middleware, Swagger, Docker, Seed), כל נקודות הקצה, NLog, קליינט React ופריסת ה-API ל-Render עם PostgreSQL מתארח.
-- **נבדק:** 24 בדיקות אוטומטיות עוברות (`dotnet test`), כולל הזמנה כפולה ומרוץ בין בקשות במקביל (אחת מצליחה, השנייה 409). תהליכי לקוח וספק נבדקו מול מסד אמיתי.
+- **נבדק:** 25 בדיקות אוטומטיות עוברות (`dotnet test`), כולל הזמנה כפולה ומרוץ בין בקשות במקביל (אחת מצליחה, השנייה 409). תהליכי לקוח וספק נבדקו מול מסד אמיתי.
 - **תהליך מנהל** (אישור ספק, שיבוץ, אישור מחיקה): מכוסה ב-`scripts/smoke-test.ps1` ובבדיקות היחידה. הרצת הסקריפט המלא מול סביבה חיה תלויה ברשת שאינה חוסמת את הכתובת.
 - **החלטת עיצוב ב-DTO:** ספק משובץ רואה את שם הלקוח ואת האימייל שלו, כדי שיוכל ליצור קשר לצורך ההפקה.

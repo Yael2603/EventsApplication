@@ -42,9 +42,8 @@ public class EventService : IEventService
         if (categoryIds.Distinct().Count() != categoryIds.Count)        // אם קטגוריה חוזרת פעמיים
             throw new BadRequestException("ניתן להוסיף סעיף אחד בלבד לכל קטגוריה");     // 400
 
-        foreach (var categoryId in categoryIds)                         // בודק שכל קטגוריה קיימת
-            if (!await _categories.ExistsAsync(categoryId, ct))
-                throw new BadRequestException($"הקטגוריה {categoryId} אינה קיימת");     // 400
+        if (await _categories.CountExistingAsync(categoryIds, ct) != categoryIds.Count)    // שאילתה אחת לכל הקטגוריות (בלי N+1)
+            throw new BadRequestException("אחת הקטגוריות שנבחרו אינה קיימת");          // 400
 
         var ev = _mapper.Map<Event>(dto);                               // יוצר Event עם הסעיפים מה-DTO
         ev.ClientId = clientId;                                         // בעל האירוע: מהטוקן, לא מהבקשה
