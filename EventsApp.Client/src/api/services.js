@@ -22,7 +22,7 @@ export const categoriesApi = {                          // קטגוריות
 export const eventsApi = {                              // אירועים
   create: (body) => data(api.post('/api/events', body)),                          // לקוח
   mine: () => data(api.get('/api/events/my')),                                    // האירועים שלי
-  all: () => data(api.get('/api/events')),                                        // מנהל
+  all: (page = 1, pageSize = 10) => data(api.get('/api/events', { params: { page, pageSize } })),   // מנהל: עמוד אחד ({ items, page, totalPages, ... })
   get: (id) => data(api.get(`/api/events/${id}`)),                                // אירוע אחד
   update: (id, body) => data(api.put(`/api/events/${id}`, body)),                 // עריכה
   addItem: (id, body) => data(api.post(`/api/events/${id}/items`, body)),         // הוספת סעיף
@@ -55,13 +55,13 @@ export const profileApi = {                             // פרופיל הספק
 export const deletionApi = {                            // בקשות מחיקה
   create: (eventId, reason) => data(api.post(`/api/events/${eventId}/deletion-request`, { reason })),   // לקוח
   list: (status) => data(api.get('/api/deletion-requests', { params: { status } })),    // מנהל
-  approve: (id) => api.put(`/api/deletion-requests/${id}/approve`),               // מנהל (204)
-  reject: (id, adminNote) => data(api.put(`/api/deletion-requests/${id}/reject`, { adminNote })),   // מנהל
+  approve: (id) => api.patch(`/api/deletion-requests/${id}`, { decision: 'Approve' }),               // מנהל (204)
+  reject: (id, adminNote) => data(api.patch(`/api/deletion-requests/${id}`, { decision: 'Reject', adminNote })),   // מנהל
 }
 
 export const notificationsApi = {                       // התראות
   list: () => data(api.get('/api/notifications')),                                // שלי
-  markRead: (id) => api.put(`/api/notifications/${id}/read`),                     // סימון כנקראה
+  markRead: (id) => api.patch(`/api/notifications/${id}`, { isRead: true }),      // סימון כנקראה
 }
 
 export const statsApi = {                               // סטטיסטיקות מנהל

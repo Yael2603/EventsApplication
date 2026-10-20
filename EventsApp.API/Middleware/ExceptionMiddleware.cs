@@ -46,11 +46,14 @@ public class ExceptionMiddleware
 
         var correlationId = context.Items[CorrelationIdMiddleware.ItemKey]?.ToString();
 
-        if (status >= 500)
-            _logger.LogError(ex, "Unhandled exception. CorrelationId={CorrelationId}", correlationId);
-        else
-            _logger.LogWarning("Request failed with {Status}: {Message}. CorrelationId={CorrelationId}",
-                status, ex.Message, correlationId);
+        using (_logger.BeginScope(new Dictionary<string, object?> { ["CorrelationId"] = correlationId }))   // מכיוון שה-Middleware הזה ראשון, ה-Scope של המזהה כבר נסגר; פותחים אותו שוב כדי שיופיע בשורת הלוג
+        {
+            if (status >= 500)
+                _logger.LogError(ex, "Unhandled exception. CorrelationId={CorrelationId}", correlationId);
+            else
+                _logger.LogWarning("Request failed with {Status}: {Message}. CorrelationId={CorrelationId}",
+                    status, ex.Message, correlationId);
+        }
 
         var problem = new ProblemDetails
         {

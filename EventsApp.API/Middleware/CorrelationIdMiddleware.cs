@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace EventsApp.API.Middleware;
 
 public class CorrelationIdMiddleware
@@ -35,7 +37,15 @@ public class CorrelationIdMiddleware
 
         using (_logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = id }))
         {
-            await _next(context);
+            _logger.LogInformation("Incoming request {Method} {Path}{Query}",      // לוג לכל בקשה נכנסת; ה-CorrelationId נכנס לשורה דרך ה-Scope
+                context.Request.Method, context.Request.Path, context.Request.QueryString);
+
+            var stopwatch = Stopwatch.StartNew();       // מודד כמה זמן הבקשה לקחה
+
+            await _next(context);                       // ממשיך לשאר ה-pipeline (אם נזרקת חריגה, ה-ExceptionMiddleware שלפנינו מטפל ומתעד אותה)
+
+            _logger.LogInformation("Request finished {Method} {Path} with {StatusCode} in {ElapsedMs} ms",   // לוג סיום עם קוד התשובה
+                context.Request.Method, context.Request.Path, context.Response.StatusCode, stopwatch.ElapsedMilliseconds);
         }
     }
 }

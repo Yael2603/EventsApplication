@@ -25,14 +25,14 @@ public class NotificationService : INotificationService
         return _mapper.Map<List<NotificationDto>>(list);                // ממיר
     }
 
-    public async Task MarkReadAsync(int userId, int id, CancellationToken ct)
+    public async Task SetReadAsync(int userId, int id, bool isRead, CancellationToken ct)
     {
         var notification = await _notifications.GetByIdAsync(id, ct)    // ההתראה (במעקב)
                            ?? throw new NotFoundException("ההתראה לא נמצאה");   // 404
         if (notification.UserId != userId)                              // של משתמש אחר
             throw new ForbiddenException("ניתן לסמן רק התראה שלך");     // 403
 
-        notification.IsRead = true;                                     // מסמן כנקראה
+        notification.IsRead = isRead;                                   // המצב החדש מגוף הבקשה
         await _uow.SaveChangesAsync(ct);                                // שומר
     }
 }

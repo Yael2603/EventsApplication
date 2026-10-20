@@ -18,10 +18,10 @@ public class NotificationsController : ControllerBase
     public async Task<ActionResult<List<NotificationDto>>> GetMine(CancellationToken ct)
         => Ok(await _notifications.GetMineAsync(User.GetUserId(), ct));     // ההתראות של המחובר
 
-    [HttpPut("{id:int}/read")]                      // PUT /api/notifications/4/read
-    public async Task<IActionResult> MarkRead(int id, CancellationToken ct)
+    [HttpPatch("{id:int}")]                         // PATCH /api/notifications/4  גוף: { "isRead": true }
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateNotificationDto dto, CancellationToken ct)
     {
-        await _notifications.MarkReadAsync(User.GetUserId(), id, ct);       // מסמן כנקראה
+        await _notifications.SetReadAsync(User.GetUserId(), id, dto.IsRead!.Value, ct);    // מעדכן את מצב הקריאה ([Required] מבטיח שיש ערך)
         return NoContent();                                                 // 204
     }
 }

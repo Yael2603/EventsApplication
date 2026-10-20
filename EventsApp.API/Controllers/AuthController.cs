@@ -18,7 +18,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<ActionResult<AuthResponseDto>> Register(RegisterRequestDto dto, CancellationToken ct)
+    public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterRequestDto dto, CancellationToken ct)
     {
         var result = await _auth.RegisterAsync(dto, ct);
         return StatusCode(StatusCodes.Status201Created, result);
@@ -26,7 +26,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register-provider")]
     [AllowAnonymous]
-    public async Task<ActionResult<AuthResponseDto>> RegisterProvider(RegisterProviderRequestDto dto, CancellationToken ct)
+    public async Task<ActionResult<AuthResponseDto>> RegisterProvider([FromBody] RegisterProviderRequestDto dto, CancellationToken ct)
     {
         var result = await _auth.RegisterProviderAsync(dto, ct);
         return StatusCode(StatusCodes.Status201Created, result);
@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<ActionResult<AuthResponseDto>> Login(LoginRequestDto dto, CancellationToken ct)
+    public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginRequestDto dto, CancellationToken ct)
     {
         var result = await _auth.LoginAsync(dto, ct);
         return Ok(result);

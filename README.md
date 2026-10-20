@@ -148,7 +148,7 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 | POST | `/api/events` | Client | יצירת אירוע ותפיסת יום | נכתב |
 | GET | `/api/events/my` | Client | האירועים שלי | נכתב |
 | GET | `/api/events/{id}` | הבעלים או Admin | פרטי אירוע | נכתב |
-| GET | `/api/events` | Admin | כל האירועים | נכתב |
+| GET | `/api/events?page=1&pageSize=10` | Admin | כל האירועים, בעימוד (Skip/Take בבסיס הנתונים) | נכתב |
 
 ### ספקים, מועמדויות ושיבוץ
 | שיטה | נתיב | הרשאה | תיאור | סטטוס |
@@ -174,8 +174,7 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 |---|---|---|---|---|
 | POST | `/api/events/{eventId}/deletion-request` | Client (הבעלים) | בקשת מחיקה עם נימוק | נכתב |
 | GET | `/api/deletion-requests?status=` | Admin | בקשות לפי סטטוס | נכתב |
-| PUT | `/api/deletion-requests/{id}/approve` | Admin | אישור: מחיקת האירוע ושחרור היום | נכתב |
-| PUT | `/api/deletion-requests/{id}/reject` | Admin | דחייה עם הערה | נכתב |
+| PATCH | `/api/deletion-requests/{id}` | Admin | החלטה על הבקשה: `{ "decision": "Approve" }` מוחק את האירוע ומשחרר את היום (204); `{ "decision": "Reject", "adminNote": "..." }` דוחה (200) | נכתב |
 
 ### עריכה, מעקב והתראות
 | שיטה | נתיב | הרשאה | תיאור | סטטוס |
@@ -187,7 +186,7 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 | DELETE | `/api/candidacies/{id}` | Provider | ביטול מועמדות | נכתב |
 | GET | `/api/providers/me/bookings` | Provider | סעיפים ששובצו אליי | נכתב |
 | GET | `/api/notifications` | מחובר | ההתראות שלי | נכתב |
-| PUT | `/api/notifications/{id}/read` | מחובר | סימון כנקראה | נכתב |
+| PATCH | `/api/notifications/{id}` | מחובר | עדכון מצב קריאה: `{ "isRead": true }` | נכתב |
 | GET | `/api/admin/stats` | Admin | סטטיסטיקות כלליות | נכתב |
 
 קודי תשובה נפוצים: `200` הצלחה, `201` נוצר, `204` הצלחה בלי גוף, `400` בקשה לא תקינה, `401` לא מחובר, `403` אין הרשאה, `404` לא נמצא, `409` התנגשות.

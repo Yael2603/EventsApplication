@@ -1,6 +1,7 @@
 using EventsApp.Application.Abstractions;
 using EventsApp.Application.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 
 namespace EventsApp.Infrastructure.Data;            // לצד AppDbContext, כי זה מימוש שתלוי ב-EF
@@ -8,7 +9,31 @@ namespace EventsApp.Infrastructure.Data;            // לצד AppDbContext, כי
 public class UnitOfWork : IUnitOfWork               // מממש את החוזה מ-Application
 {
     private readonly AppDbContext _db;              // אותו DbContext שמשותף למאגרים באותה בקשה
+    private IDbContextTransaction? _transaction;    // הטרנזקציה הפתוחה כרגע (null אם אין)
     public UnitOfWork(AppDbContext db) { _db = db; }    // הזרקה
+
+    public async Task BeginTransactionAsync(CancellationToken ct)
+    {
+        if (_transaction != null)                   // הגנה: לא פותחים טרנזקציה בתוך טרנזקציה
+            throw new InvalidOperationException("A transaction is already open");
+        _transaction = await _db.Database.BeginTransactionAsync(ct);    // BEGIN בבסיס הנתונים; מעכשיו כל SELECT ו-SaveChanges על אותו חיבור בתוכה
+    }
+
+    public async Task CommitAsync(CancellationToken ct)
+    {
+        if (_transaction == null) return;           // אין טרנזקציה פתוחה: אין מה לאשר
+        await _transaction.CommitAsync(ct);         // COMMIT: השינויים נשמרים סופית
+        await _transaction.DisposeAsync();          // משחרר את האובייקט
+        _transaction = null;                        // מאפשר טרנזקציה חדשה באותה בקשה
+    }
+
+    public async Task RollbackAsync(CancellationToken ct)
+    {
+        if (_transaction == null) return;           // אין טרנזקציה פתוחה: אין מה לבטל
+        await _transaction.RollbackAsync(ct);       // ROLLBACK: מבטל כל מה שנעשה בטרנזקציה
+        await _transaction.DisposeAsync();          // משחרר את האובייקט
+        _transaction = null;                        // מאפשר טרנזקציה חדשה באותה בקשה
+    }
 
     public async Task SaveChangesAsync(CancellationToken ct)
     {

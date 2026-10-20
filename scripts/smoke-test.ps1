@@ -116,7 +116,7 @@ Check "second pending request" 409 (Call POST "/api/events/$eventId/deletion-req
 $drList = Call GET "/api/deletion-requests?status=Pending" $null $tAdmin
 $drId = ($drList.Data | Where-Object { $_.eventId -eq $eventId }).id
 Check "admin sees the request" $true ($null -ne $drId)
-Check "admin approves deletion" 204 (Call PUT "/api/deletion-requests/$drId/approve" $null $tAdmin).Status
+Check "admin approves deletion" 204 (Call PATCH "/api/deletion-requests/$drId" @{ decision = "Approve" } $tAdmin).Status
 
 # --- אחרי המחיקה ---
 $dayFree = Call GET "/api/calendar?from=$date&to=$date" $null $tB

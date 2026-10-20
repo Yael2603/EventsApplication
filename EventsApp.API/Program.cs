@@ -138,8 +138,8 @@ else
     app.Logger.LogWarning("No connection string configured. Skipping migrations and seed.");
 }
 
-app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<ExceptionMiddleware>();          // ראשון ב-pipeline: תופס חריגה מכל שלב שאחריו ומחזיר ProblemDetails
+app.UseMiddleware<CorrelationIdMiddleware>();      // קובע מזהה לבקשה, כותב לוג כניסה וסיום, ומחזיר את המזהה בכותרת
 
 app.UseSwagger();
 app.UseSwaggerUI();

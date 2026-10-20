@@ -28,17 +28,17 @@ public class EventItemsController : ControllerBase
 
     [HttpGet("{itemId:int}/candidacies")]           // GET /api/event-items/7/candidacies
     [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד
-    public async Task<ActionResult<List<CandidacyDto>>> GetCandidacies(int itemId, CancellationToken ct)
+    public async Task<ActionResult<List<CandidacyDto>>> GetCandidacies([FromRoute] int itemId, CancellationToken ct)
         => Ok(await _candidacies.GetByItemAsync(itemId, ct));                   // המועמדים לסעיף
 
     [HttpPut("{itemId:int}/provider")]              // PUT /api/event-items/7/provider
     [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד
-    public async Task<ActionResult<EventItemDto>> AssignProvider(int itemId, AssignProviderDto dto, CancellationToken ct)
+    public async Task<ActionResult<EventItemDto>> AssignProvider([FromRoute] int itemId, [FromBody] AssignProviderDto dto, CancellationToken ct)
         => Ok(await _events.AssignProviderAsync(itemId, dto, ct));              // שיבוץ
 
     [HttpDelete("{itemId:int}")]                    // DELETE /api/event-items/7
     [Authorize(Roles = nameof(UserRole.Client))]    // לקוח בלבד
-    public async Task<IActionResult> RemoveItem(int itemId, CancellationToken ct)
+    public async Task<IActionResult> RemoveItem([FromRoute] int itemId, CancellationToken ct)
     {
         await _events.RemoveItemAsync(User.GetUserId(), itemId, ct);    // מסיר (או זורק שגיאה)
         return NoContent();                                             // 204

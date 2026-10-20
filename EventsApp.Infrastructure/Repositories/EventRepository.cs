@@ -27,8 +27,16 @@ public class EventRepository : IEventRepository
         WithDetails().Where(e => e.ClientId == clientId)            // רק של הלקוח
             .OrderBy(e => e.Date).ToListAsync(ct);                  // לפי תאריך
 
-    public Task<List<Event>> GetAllAsync(CancellationToken ct) =>
-        WithDetails().OrderBy(e => e.Date).ToListAsync(ct);         // כולם, לפי תאריך
+    public Task<List<Event>> GetPageAsync(int page, int pageSize, CancellationToken ct) =>
+        WithDetails()
+            .OrderBy(e => e.Date).ThenBy(e => e.Id)                 // סדר קבוע (חובה לפני Skip/Take, אחרת עמודים "קופצים")
+            .Skip((page - 1) * pageSize)                            // מדלג על השורות של העמודים הקודמים (OFFSET ב-SQL)
+            .Take(pageSize)                                         // לוקח רק את שורות העמוד הנוכחי (LIMIT ב-SQL)
+            .AsSplitQuery()                                         // טוען את הסעיפים בשאילתה נפרדת, כדי ש-LIMIT יחול על אירועים ולא על שורות JOIN
+            .ToListAsync(ct);                                       // רק כאן השאילתה רצה בבסיס הנתונים, כבר מסוננת
+
+    public Task<int> CountAsync(CancellationToken ct) =>
+        _db.Events.CountAsync(ct);                                  // SELECT COUNT(*) בבסיס הנתונים, בלי לטעון שורות
 
     public Task<Event?> GetForUpdateAsync(int id, CancellationToken ct) =>
         _db.Events.Include(e => e.Items)                // במעקב (בלי AsNoTracking), עם הסעיפים לבדיקת קטגוריות

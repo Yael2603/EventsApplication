@@ -20,7 +20,7 @@ public class ProviderProfileController : ControllerBase
         => Ok(await _providers.GetMineAsync(User.GetUserId(), ct));     // הפרופיל של המחובר
 
     [HttpPut]                                       // PUT /api/providers/me
-    public async Task<ActionResult<ProviderDto>> UpdateMine(UpdateProviderProfileDto dto, CancellationToken ct)
+    public async Task<ActionResult<ProviderDto>> UpdateMine([FromBody] UpdateProviderProfileDto dto, CancellationToken ct)
         => Ok(await _providers.UpdateMineAsync(User.GetUserId(), dto, ct));     // עדכון הפרופיל של המחובר
 
     [HttpGet("bookings")]                           // GET /api/providers/me/bookings

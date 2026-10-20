@@ -72,6 +72,8 @@ public class EventServiceTests                              // בדיקות יח
         await Assert.ThrowsAsync<ConflictException>(() => Sut().CreateAsync(1, dto, CancellationToken.None));  // 409
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);   // ההגנה הראשונה עצרה לפני השמירה
         _events.Verify(e => e.Add(It.IsAny<Event>()), Times.Never);                         // אירוע לא נוסף
+        _uow.Verify(u => u.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);       // הטרנזקציה בוטלה
+        _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);        // ולא אושרה
     }
 
     [Fact]
@@ -98,6 +100,9 @@ public class EventServiceTests                              // בדיקות יח
         Assert.Equal(5, added!.ClientId);                   // הבעלים נקבע מהטוקן, לא מהבקשה
         Assert.Equal(10, result.Id);                        // הוחזר ה-DTO
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);    // שמירה אחת בלבד (טרנזקציה אחת)
+        _uow.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);   // נפתחה טרנזקציה מפורשת
+        _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);             // והיא אושרה
+        _uow.Verify(u => u.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never);          // ולא בוטלה
     }
 
     [Fact]
@@ -140,5 +145,21 @@ public class EventServiceTests                              // בדיקות יח
             .ReturnsAsync(new EventItem { Id = 4, EventId = 7, Event = new Event { ClientId = 1, Date = Today.AddDays(10) } });
         _items.Setup(i => i.CountByEventAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(1);   // זה הסעיף היחיד
         await Assert.ThrowsAsync<BadRequestException>(() => Sut().RemoveItemAsync(1, 4, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetPage_PassesPageToRepository_AndReturnsTotals()
+    {
+        _events.Setup(e => e.GetPageAsync(2, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Event> { new() { Id = 11, Client = new User { FullName = "דנה" }, Items = new List<EventItem>() } });   // עמוד 2 מחזיר אירוע אחד
+        _events.Setup(e => e.CountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(11);    // 11 אירועים בסך הכול
+
+        var result = await Sut().GetPageAsync(new() { Page = 2, PageSize = 10 }, CancellationToken.None);
+
+        Assert.Single(result.Items);                        // רק שורות העמוד
+        Assert.Equal(2, result.Page);                       // העמוד שהתבקש
+        Assert.Equal(11, result.TotalCount);                // הסך הכולל
+        Assert.Equal(2, result.TotalPages);                 // 11 שורות / 10 בעמוד = 2 עמודים
+        _events.Verify(e => e.GetPageAsync(2, 10, It.IsAny<CancellationToken>()), Times.Once);  // העימוד נעשה במאגר (בבסיס הנתונים)
     }
 }

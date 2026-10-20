@@ -10,7 +10,7 @@ export default function Notifications() {              // ההתראות של ה
 
   const markRead = async (n) => {                       // מסמן התראה כנקראה
     try {
-      await notificationsApi.markRead(n.id)             // PUT /api/notifications/{id}/read
+      await notificationsApi.markRead(n.id)             // PATCH /api/notifications/{id}
       setData(data.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)))   // מעדכן מקומית בלי טעינה מחדש
     } catch (err) {
       toast.error(getErrorMessage(err))

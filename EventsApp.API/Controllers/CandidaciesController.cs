@@ -16,7 +16,7 @@ public class CandidaciesController : ControllerBase
     public CandidaciesController(ICandidacyService candidacies) { _candidacies = candidacies; }  // הזרקה
 
     [HttpPost]                                      // POST /api/candidacies
-    public async Task<ActionResult<CandidacyDto>> Apply(CreateCandidacyDto dto, CancellationToken ct)
+    public async Task<ActionResult<CandidacyDto>> Apply([FromBody] CreateCandidacyDto dto, CancellationToken ct)
     {
         var result = await _candidacies.ApplyAsync(User.GetUserId(), dto, ct);  // הספק מהטוקן
         return StatusCode(StatusCodes.Status201Created, result);                // 201 (אין כתובת "קריאה בודדת" למועמדות)
@@ -27,7 +27,7 @@ public class CandidaciesController : ControllerBase
         => Ok(await _candidacies.GetMineAsync(User.GetUserId(), ct));       // המועמדויות שלי
 
     [HttpDelete("{id:int}")]                        // DELETE /api/candidacies/3
-    public async Task<IActionResult> Withdraw(int id, CancellationToken ct)
+    public async Task<IActionResult> Withdraw([FromRoute] int id, CancellationToken ct)
     {
         await _candidacies.WithdrawAsync(User.GetUserId(), id, ct);         // מבטל (או זורק שגיאה)
         return NoContent();                                                 // 204

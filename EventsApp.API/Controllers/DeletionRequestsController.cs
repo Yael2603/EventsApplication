@@ -15,7 +15,7 @@ public class DeletionRequestsController : ControllerBase
 
     [HttpPost("api/events/{eventId:int}/deletion-request")]     // POST /api/events/5/deletion-request
     [Authorize(Roles = nameof(UserRole.Client))]    // לקוח בלבד (הבעלות נבדקת בשירות)
-    public async Task<ActionResult<DeletionRequestDto>> Create(int eventId, CreateDeletionRequestDto dto, CancellationToken ct)
+    public async Task<ActionResult<DeletionRequestDto>> Create([FromRoute] int eventId, [FromBody] CreateDeletionRequestDto dto, CancellationToken ct)
         => StatusCode(StatusCodes.Status201Created, await _requests.CreateAsync(User.GetUserId(), eventId, dto, ct));  // 201
 
     [HttpGet("api/deletion-requests")]              // GET /api/deletion-requests?status=Pending
@@ -23,16 +23,18 @@ public class DeletionRequestsController : ControllerBase
     public async Task<ActionResult<List<DeletionRequestDto>>> Get([FromQuery] DeletionRequestStatus? status, CancellationToken ct)
         => Ok(await _requests.GetAsync(status, ct));
 
-    [HttpPut("api/deletion-requests/{id:int}/approve")]     // PUT /api/deletion-requests/3/approve
+    [HttpPatch("api/deletion-requests/{id:int}")]   // PATCH /api/deletion-requests/3  גוף: { "decision": "Approve" או "Reject", "adminNote": "..." }
     [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד
-    public async Task<IActionResult> Approve(int id, CancellationToken ct)
+    public async Task<IActionResult> Resolve([FromRoute] int id, [FromBody] ResolveDeletionRequestDto dto, CancellationToken ct)
     {
-        await _requests.ApproveAsync(id, ct);       // מוחק את האירוע ומשחרר את היום
-        return NoContent();                         // 204: הצליח, אין מה להחזיר (האירוע והבקשה כבר לא קיימים)
-    }
+        if (dto.Decision == DeletionDecision.Approve)   // אישור
+        {
+            await _requests.ApproveAsync(id, ct);   // מוחק את האירוע ומשחרר את היום
+            return NoContent();                     // 204: הצליח, אין מה להחזיר (האירוע והבקשה כבר לא קיימים)
+        }
 
-    [HttpPut("api/deletion-requests/{id:int}/reject")]      // PUT /api/deletion-requests/3/reject
-    [Authorize(Roles = nameof(UserRole.Admin))]     // אדמין בלבד
-    public async Task<ActionResult<DeletionRequestDto>> Reject(int id, RejectDeletionRequestDto dto, CancellationToken ct)
-        => Ok(await _requests.RejectAsync(id, dto, ct));
+        var rejected = await _requests.RejectAsync(id,                  // דחייה
+            new RejectDeletionRequestDto { AdminNote = dto.AdminNote }, ct);   // מעביר את הערת האדמין לשירות
+        return Ok(rejected);                        // 200 עם הבקשה המעודכנת (סטטוס Rejected)
+    }
 }

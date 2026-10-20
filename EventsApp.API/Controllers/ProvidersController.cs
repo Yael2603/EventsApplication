@@ -19,6 +19,6 @@ public class ProvidersController : ControllerBase
         => Ok(await _providers.GetAsync(status, ct));       // 200 עם הרשימה
 
     [HttpPut("{id:int}/status")]                    // PUT /api/providers/3/status
-    public async Task<ActionResult<ProviderDto>> UpdateStatus(int id, UpdateProviderStatusDto dto, CancellationToken ct)
+    public async Task<ActionResult<ProviderDto>> UpdateStatus([FromRoute] int id, [FromBody] UpdateProviderStatusDto dto, CancellationToken ct)
         => Ok(await _providers.UpdateStatusAsync(id, dto, ct));     // 200 עם הספק המעודכן
 }

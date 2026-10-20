@@ -1,5 +1,6 @@
 using AutoMapper;
 using EventsApp.Application.Abstractions;
+using EventsApp.Application.DTOs.Common;
 using EventsApp.Application.DTOs.Events;
 using EventsApp.Application.Exceptions;
 using EventsApp.Application.Repositories;
@@ -45,20 +46,29 @@ public class EventService : IEventService
             if (!await _categories.ExistsAsync(categoryId, ct))
                 throw new BadRequestException($"הקטגוריה {categoryId} אינה קיימת");     // 400
 
-        var day = await _calendar.GetForUpdateAsync(dto.Date, ct)       // היום מהלוח, עם מעקב
-                  ?? throw new BadRequestException("התאריך אינו קיים בלוח החברה");      // 400 אם אין
-
-        if (day.IsTaken)                                                // כבר תפוס
-            throw new ConflictException("התאריך כבר תפוס. יש לבחור תאריך אחר");        // 409
-
-        day.IsTaken = true;                                             // תופס את היום (EF יחליף Version בשמירה)
-
         var ev = _mapper.Map<Event>(dto);                               // יוצר Event עם הסעיפים מה-DTO
         ev.ClientId = clientId;                                         // בעל האירוע: מהטוקן, לא מהבקשה
         ev.CreatedAtUtc = DateTime.UtcNow;                              // זמן יצירה
 
-        _events.Add(ev);                                                // מסמן להוספה
-        await _uow.SaveChangesAsync(ct);                                // שמירה אחת: תפיסת היום והאירוע. אם נכשל: 409
+        await _uow.BeginTransactionAsync(ct);                           // מכאן: הבדיקה העסקית והשמירה באותה טרנזקציה
+        try
+        {
+            var day = await _calendar.GetForUpdateAsync(dto.Date, ct)   // היום מהלוח, עם מעקב (קריאה בתוך הטרנזקציה)
+                      ?? throw new BadRequestException("התאריך אינו קיים בלוח החברה");  // 400 אם אין
+
+            if (day.IsTaken)                                            // כבר תפוס
+                throw new ConflictException("התאריך כבר תפוס. יש לבחור תאריך אחר");    // 409
+
+            day.IsTaken = true;                                         // תופס את היום (EF יחליף Version בשמירה)
+            _events.Add(ev);                                            // מסמן להוספה
+            await _uow.SaveChangesAsync(ct);                            // שומר את תפיסת היום ואת האירוע. אם Version השתנה: 409
+            await _uow.CommitAsync(ct);                                 // הכול עבר: מאשר את הטרנזקציה
+        }
+        catch
+        {
+            await _uow.RollbackAsync(CancellationToken.None);           // כל כישלון (400/409/שגיאה): מבטל הכול, שום דבר לא נשמר חלקית
+            throw;                                                      // ממשיך לזרוק, כדי שה-ExceptionMiddleware יחזיר את הקוד המתאים
+        }
 
         var created = await _events.GetByIdAsync(ev.Id, ct);            // טוען מחדש עם שמות קטגוריות
         return _mapper.Map<EventDto>(created!);                         // ממיר ל-DTO
@@ -81,10 +91,18 @@ public class EventService : IEventService
         return _mapper.Map<EventDto>(ev);                               // ממיר
     }
 
-    public async Task<List<EventDto>> GetAllAsync(CancellationToken ct)
+    public async Task<PagedResultDto<EventDto>> GetPageAsync(PaginationQueryDto query, CancellationToken ct)
     {
-        var items = await _events.GetAllAsync(ct);                      // כולם
-        return _mapper.Map<List<EventDto>>(items);                      // ממיר
+        var items = await _events.GetPageAsync(query.Page, query.PageSize, ct);     // רק שורות העמוד המבוקש
+        var total = await _events.CountAsync(ct);                       // סך כל האירועים
+
+        return new PagedResultDto<EventDto>                             // עוטף את העמוד עם נתוני העימוד
+        {
+            Items = _mapper.Map<List<EventDto>>(items),                 // ממיר את שורות העמוד ל-DTO
+            Page = query.Page,                                          // העמוד שהוחזר
+            PageSize = query.PageSize,                                  // גודל העמוד
+            TotalCount = total                                          // הסך הכולל (TotalPages מחושב ממנו)
+        };
     }
 
     public async Task<EventItemDto> AssignProviderAsync(int itemId, AssignProviderDto dto, CancellationToken ct)
