@@ -228,7 +228,7 @@ HTTP → Middleware (CorrelationId, Exception) → Controller (הרשאה, DTO)
 | `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpirationMinutes` | פרטי הטוקן | `appsettings.json` |
 | `ConnectionStrings:DefaultConnection` | חיבור ל-PostgreSQL | User Secrets / משתנה סביבה |
 | `Seed:AdminEmail`, `Seed:AdminPassword`, `Seed:AdminFullName` | האדמין היחיד | User Secrets / משתנה סביבה |
-| `Seed:DemoUsers` | יצירת משתמשי דמו | `appsettings.Development.json` (true) |
+| `Seed:DemoUsers` | יצירת משתמשי דמו (לקוח וספק, ומנהל אם לא הוגדר) | `appsettings.Development.json` / משתנה סביבה ב-Render |
 | `Cors:AllowedOrigins` | כתובות הקליינט המורשות | `appsettings.json` / משתנה סביבה |
 
 בהפעלה ראשונה (ואחריה בכל הפעלה, בצורה בטוחה לחזרה) המערכת מחילה מיגרציות ומזינה: 8 קטגוריות התחלתיות, ימי לוח לשנה קדימה, האדמין, ובסביבת פיתוח גם משתמשי דמו (`Seed:DemoUsers` ב-`appsettings.Development.json`).
@@ -290,15 +290,19 @@ npm run dev
 
 **6. שימוש ב-Swagger עם טוקן:** `POST /api/auth/login`, להעתיק את `token`, ללחוץ **Authorize** ולהדביק אותו.
 
-### משתמשי דמו (סביבת Development)
+### משתמשי דמו
 
-בהרצה מקומית (`ASPNETCORE_ENVIRONMENT=Development`) ה-Seed יוצר משתמש לכל תפקיד, כדי שאפשר יהיה לבדוק את המערכת מיד. בייצור (Render) הם לא נוצרים.
+אותם פרטי כניסה עובדים גם בהרצה מקומית וגם באתר החי ב-Render:
 
 | תפקיד | אימייל | סיסמה | הערה |
 |---|---|---|---|
-| Admin | `admin@demo.local` | `Demo1234!` | נוצר רק אם לא הוגדר `Seed:AdminEmail` |
+| Admin | `admin@demo.local` | `Demo1234!` | המנהל היחיד במערכת |
 | Client | `client@demo.local` | `Demo1234!` | יכול להזמין אירוע ביום פנוי |
 | Provider | `provider@demo.local` | `Demo1234!` | ספק מאושר בקטגוריה הראשונה, יכול להגיש מועמדות |
+
+- **מקומית:** ה-Seed יוצר אותם אוטומטית (`Seed:DemoUsers = true` ב-`appsettings.Development.json`). אם הוגדר `Seed:AdminEmail` ב-User Secrets, המנהל יהיה לפי ההגדרה הזו.
+- **ב-Render:** מוגדרים במשתני הסביבה `Seed__AdminEmail`, `Seed__AdminPassword` ו-`Seed__DemoUsers`.
+- המנהל תמיד אחד: אם פרטי המנהל בהגדרות משתנים, ה-Seed מעדכן את המנהל הקיים ולא יוצר מנהל נוסף.
 
 **תרחיש בדיקה של המשאב המוגבל:** להתחבר כ-`client@demo.local` בשני דפדפנים, לבחור באותו תאריך ולשלוח כמעט יחד. הראשון מקבל 201, והשני מקבל 409 והודעה שהתאריך נתפס.
 
@@ -331,7 +335,8 @@ dotnet ef migrations add <שם> --project EventsApp.Infrastructure --startup-pro
 |---|---|
 | `Jwt__Key` | מפתח JWT סודי (32 תווים ומעלה) |
 | `ConnectionStrings__DefaultConnection` | מחרוזת חיבור ל-PostgreSQL מתארח |
-| `Seed__AdminEmail`, `Seed__AdminPassword` | פרטי האדמין היחיד |
+| `Seed__AdminEmail`, `Seed__AdminPassword` | פרטי האדמין היחיד (באתר הפרויקט: פרטי הדמו) |
+| `Seed__DemoUsers` | `true` ליצירת לקוח וספק דמו |
 | `Cors__AllowedOrigins__0` | כתובת הקליינט המורשית |
 
 בדיקת תקינות: `GET /api/health`. ללא `Jwt__Key` תקין האפליקציה לא תעלה (בכוונה), ולכן יש להגדיר אותו לפני הפריסה הראשונה.

@@ -119,16 +119,29 @@ public class DbSeeder
         }
 
         var email = _settings.AdminEmail.Trim().ToLowerInvariant();
-        if (await _db.Users.AnyAsync(u => u.Email == email, ct)) return;
+        var admin = await _db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin, ct);   // המנהל היחיד במערכת (אם כבר קיים)
 
-        _db.Users.Add(new User
+        if (admin == null)                          // עדיין אין מנהל: יוצרים אותו מההגדרות
         {
-            FullName = _settings.AdminFullName,
-            Email = email,
-            PasswordHash = _hasher.Hash(_settings.AdminPassword),
-            Role = UserRole.Admin,
-            CreatedAtUtc = DateTime.UtcNow
-        });
+            _db.Users.Add(new User
+            {
+                FullName = _settings.AdminFullName,
+                Email = email,
+                PasswordHash = _hasher.Hash(_settings.AdminPassword),
+                Role = UserRole.Admin,
+                CreatedAtUtc = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync(ct);
+            return;
+        }
+
+        if (admin.Email == email && _hasher.Verify(_settings.AdminPassword, admin.PasswordHash))
+            return;                                 // המנהל כבר תואם להגדרות: אין מה לעדכן
+
+        admin.Email = email;                        // ההגדרות השתנו: מעדכנים את אותו מנהל (ולא יוצרים מנהל שני)
+        admin.FullName = _settings.AdminFullName;
+        admin.PasswordHash = _hasher.Hash(_settings.AdminPassword);
         await _db.SaveChangesAsync(ct);
+        _logger.LogInformation("Admin credentials updated from configuration");    // בלי מייל וסיסמה בלוג
     }
 }
