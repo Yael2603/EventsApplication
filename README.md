@@ -272,13 +272,14 @@ dotnet run --project EventsApp.API
 dotnet test
 ```
 
-**5. הקליינט (חלון טרמינל נוסף):**
+**5. הקליינט (ריפו נפרד):**
 ```bash
-cd EventsApp.Client
+git clone https://github.com/Yael2603/EventsApp-Client.git
+cd EventsApp-Client
 npm install
 npm run dev
 ```
-האתר זמין ב-http://localhost:5173. כתובת ה-API נקבעת ב-`EventsApp.Client/.env.development` (`VITE_API_URL=http://localhost:8080`), ויש להפעיל מחדש את `npm run dev` אחרי כל שינוי בקובץ.
+האתר זמין ב-http://localhost:5173. כתובת ה-API נקבעת ב-`.env.development` (`VITE_API_URL=http://localhost:8080`), ויש להפעיל מחדש את `npm run dev` אחרי כל שינוי בקובץ.
 
 **6. שימוש ב-Swagger עם טוקן:** `POST /api/auth/login`, להעתיק את `token`, ללחוץ **Authorize** ולהדביק אותו.
 
@@ -343,20 +344,21 @@ dotnet test
 
 ## הקליינט (React)
 
-תיקיית `EventsApp.Client`: אתר React בעיצוב "SHOW הפקות" (Vite, React Router, Axios), RTL בעברית.
+ריפו נפרד: https://github.com/Yael2603/EventsApp-Client — אתר React בעיצוב "SHOW הפקות" (Vite, React Router, Axios), RTL בעברית.
 
 - **דפי לקוח:** בחירת תאריך בלוח חי, יצירה ועריכת אירוע, סעיפים, בקשת מחיקה, התראות.
 - **דפי ספק:** סעיפים פתוחים, הגשה וביטול מועמדות עם תוצאה, שיבוצים, פרופיל.
 - **דפי מנהל:** לוח בקרה, אירועים ושיבוץ ספקים, אישור ספקים, קטגוריות, בקשות מחיקה.
 - **אבטחה בקליינט:** הטוקן נשלח בכותרת מ-`api/client.js`, `ProtectedRoute` חוסם לפי תפקיד (נוחות בלבד, האכיפה האמיתית בשרת), ו-401 מנתק אוטומטית.
-- **הרצה:** `cd EventsApp.Client`, `npm install`, `npm run dev`, ואז http://localhost:5173. כתובת ה-API ב-`.env.development` (`VITE_API_URL`).
+- **הרצה:** בריפו הקליינט, `npm install`, `npm run dev`, ואז http://localhost:5173. כתובת ה-API ב-`.env.development` (`VITE_API_URL`).
 - **פריסה:** ב-Render כאתר סטטי (`npm run build`, תיקיית `dist`), עם `VITE_API_URL` ו-`Cors__AllowedOrigins__0` בשרת.
 
 ## כתובות באינטרנט
 
 - **API (Render):** https://eventsapp-api-f0ph.onrender.com (בדיקת תקינות: `/api/health`, תיעוד: `/swagger`)
 - **אתר (Render Static Site):** https://eventsapp-client.onrender.com
-- **קוד מקור:** https://github.com/Yael2603/EventsApplication
+- **קוד מקור — שרת:** https://github.com/Yael2603/EventsApplication
+- **קוד מקור — קליינט:** https://github.com/Yael2603/EventsApp-Client
 - **הערה:** בשירות חינמי ב-Render השרת "נרדם" אחרי חוסר פעילות, והבקשה הראשונה עשויה להימשך כדקה. ברשתות עם סינון תוכן, כתובות `onrender.com` עלולות להיחסם.
 
 ## מצב הפרויקט
