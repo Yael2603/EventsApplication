@@ -4,83 +4,75 @@ import { categoriesApi } from '../api/services'         // קטגוריות מה
 import useLoad from '../utils/useLoad'                  // טעינת נתונים
 import { Loader } from '../components/ui'               // אינדיקציית טעינה
 
-const icons = ['🎶', '🍽️', '📸', '🎪', '💐', '🎤', '✨', '🎂']          // אייקונים לקטגוריות (בסיבוב)
-const shapes = ['shape-circle', 'shape-arch', 'shape-squircle', 'shape-flower', 'shape-pill']   // צורות מגוונות לכל קטגוריה
-const tints = ['t-lemon', 't-pink', 't-mint', 't-cobalt', 't-tangerine', 't-violet']          // צבעים מתחלפים
-
 export default function Home() {                        // דף הבית הציבורי
   const { user } = useAuth()                            // האם מחובר ובאיזה תפקיד
   const { data: categories, loading } = useLoad(() => categoriesApi.list(), [])   // הקטגוריות (פתוח לכולם)
 
   return (
     <>
-      <section className="hero stage">
-        <span className="curtain curtain-l" aria-hidden="true" /><span className="curtain curtain-r" aria-hidden="true" /><span className="spot" aria-hidden="true" />
-        <div className="hero-text">
-          <h1>הערב שלכם. ההפקה שלנו.</h1>
-          <p className="lead">
-            בוחרים תאריך פנוי, בונים את האירוע סעיף אחר סעיף, ואנחנו מחברים אתכם לספקים הטובים ביותר: מהמוזיקה ועד הקייטרינג.
-          </p>
+      <section className="hero photo photo-hero">{/* תמונת פתיחה: public/images/hero.jpg, ואם חסרה מוצגת תאורת במה */}
+        <div className="hero-copy">
+          <span className="rule" aria-hidden="true" />
+          <h1>ערבים שנשארים<br />בזיכרון.</h1>
+          <p className="lead">הפקת אירועים מקצה לקצה: תאריך, ספקים ותקציב במקום אחד, ובלי הפתעות ברגע האחרון.</p>
           <div className="hero-actions">
             {user ? (
               <Link to={homePathFor(user.role)} className="btn btn-primary btn-lg">לאזור האישי</Link>
             ) : (
               <>
                 <Link to="/register" className="btn btn-primary btn-lg">להזמנת אירוע</Link>
-                <Link to="/register-provider" className="btn btn-ghost btn-lg">אני ספק</Link>
+                <Link to="/register-provider" className="link-line">הצטרפות כספק</Link>
               </>
             )}
           </div>
         </div>
-        <div className="hero-art" aria-hidden="true">
-          <span className="art art-ticket"><small>כרטיס כניסה</small><b>SHOW</b><i>הערב הגדול</i><em>ערב אחד, זיכרון לכל החיים</em></span>
+        <div className="hero-strip">
+          <em>לוח התאריכים מתעדכן בזמן אמת</em>
+          <span className="sep" aria-hidden="true" />
+          <span>יום אחד, אירוע אחד</span>
         </div>
       </section>
 
-      <div className="marquee" aria-hidden="true">
-        <div className="marquee-track">
-          {[0, 1].map(k => ['חתונות', 'בר ובת מצווה', 'ברית', 'אירועי חברה', 'ימי הולדת', 'כנסים', 'חינה', 'הפקות פרטיות'].map(w => <span key={k + w}>{w}</span>))}
-        </div>
-      </div>
-
-      <section>
-        <div className="section-title">
-          <h2>שלושה צעדים לאירוע</h2>
-          <p className="muted">כל אירוע עובר את אותו מסלול</p>
-        </div>
-        <div className="grid grid-3 steps">
-          <div className="card step t-lemon"><div className="step-num">1</div><h3>בוחרים תאריך</h3><p>הלוח מציג בזמן אמת אילו ימים פנויים. יום אחד, אירוע אחד.</p></div>
-          <div className="card step t-pink"><div className="step-num">2</div><h3>בונים את האירוע</h3><p>מוסיפים סעיפים לפי קטגוריה, עם תקציב לכל סעיף.</p></div>
-          <div className="card step t-mint"><div className="step-num">3</div><h3>הצוות משבץ ספקים</h3><p>ספקים מאושרים מגישים מועמדות, ואנחנו בוחרים את המתאים ביותר.</p></div>
+      <section className="intro">
+        <h2>הפקה אחת.<br />תאריך אחד. אירוע אחד.</h2>
+        <div>
+          <p>לכל תאריך מוקצה אירוע אחד בלבד, כך שהצוות והספקים מתמקדים בערב שלכם. בוחרים תאריך פנוי, בונים את האירוע סעיף אחר סעיף, וספקים מאושרים מגישים הצעות.</p>
+          {!user && <Link to="/register">להתחלה</Link>}
         </div>
       </section>
 
-      <section>
-        <div className="section-title">
-          <h2>מה אפשר להזמין</h2>
-          <p className="muted">הקטגוריות שבהן עובדים הספקים שלנו</p>
+      <section className="gallery" aria-label="אירועים שהפקנו">{/* שלוש תמונות: wedding.jpg, corporate.jpg, table.jpg */}
+        <figure className="photo photo-a"><figcaption><b>חופה בגן</b>חתונות ואירועים משפחתיים</figcaption></figure>
+        <figure className="photo photo-b"><figcaption><b>ערב חברה</b>אירועי חברה וכנסים</figcaption></figure>
+        <figure className="photo photo-c"><figcaption><b>שולחן חג</b>אירועים פרטיים</figcaption></figure>
+      </section>
+
+      <section className="index">
+        <div className="index-head">
+          <h2>תחומי הפקה</h2>
+          <span className="muted">ספקים מאושרים בכל תחום</span>
         </div>
-        {loading ? <Loader /> : (
-          <div className="cat-grid">
-            {(categories || []).map((c, i) => (
-              <div key={c.id} className={`cat-card ${tints[i % tints.length]}`}>
-                <div className={`cat-icon ${shapes[i % shapes.length]}`}>{icons[i % icons.length]}</div>
-                <div className="cat-name">{c.name}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        {loading ? <Loader /> : (categories || []).map((c) => (
+          <div key={c.id} className="index-row"><i aria-hidden="true">&mdash;</i><b>{c.name}</b></div>
+        ))}
+      </section>
+
+      <section className="process" aria-label="איך זה עובד">
+        <div><span className="n">I</span><h3>בוחרים תאריך</h3><p>הלוח מראה אילו ימים פנויים, בזמן אמת.</p></div>
+        <div><span className="n">II</span><h3>בונים את האירוע</h3><p>סעיף לכל קטגוריה, עם תקציב לכל סעיף.</p></div>
+        <div><span className="n">III</span><h3>ספקים מגישים הצעות</h3><p>הצוות בוחר ומשבץ את הספק המתאים.</p></div>
       </section>
 
       {!user && (
-        <section className="cta-band">
+        <section className="band photo photo-b">
           <div>
-            <h2>מפיקים? הצטרפו כספקים</h2>
-            <p>נרשמים, מאושרים על ידי הצוות, ומגישים מועמדות לסעיפים שמתאימים לכם.</p>
+            <h2>ספקים מוזמנים להצטרף</h2>
+            <p>נרשמים, מאושרים על ידי הצוות, ומגישים מועמדות לסעיפים שמתאימים להם.</p>
           </div>
           <Link to="/register-provider" className="btn btn-lemon btn-lg">להרשמה כספק</Link>
         </section>
       )}
+      <div className="home-end" />
     </>
   )
 }

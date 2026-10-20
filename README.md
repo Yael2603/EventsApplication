@@ -353,9 +353,16 @@ dotnet test
 - **הרצה:** `cd EventsApp.Client`, `npm install`, `npm run dev`, ואז http://localhost:5173. כתובת ה-API ב-`.env.development` (`VITE_API_URL`).
 - **פריסה:** ב-Render כאתר סטטי (`npm run build`, תיקיית `dist`), עם `VITE_API_URL` ו-`Cors__AllowedOrigins__0` בשרת.
 
+## כתובות באינטרנט
+
+- **API (Render):** https://eventsapp-api-f0ph.onrender.com (בדיקת תקינות: `/api/health`, תיעוד: `/swagger`)
+- **אתר (Render Static Site):** https://eventsapp-client.onrender.com
+- **קוד מקור:** https://github.com/Yael2603/EventsApplication
+- **הערה:** בשירות חינמי ב-Render השרת "נרדם" אחרי חוסר פעילות, והבקשה הראשונה עשויה להימשך כדקה. ברשתות עם סינון תוכן, כתובות `onrender.com` עלולות להיחסם.
+
 ## מצב הפרויקט
 
-- **הושלם בקוד:** תשתית (ארכיטקטורה, DB, JWT, Middleware, Swagger, Docker, Seed) וכל 34 נקודות הקצה.
-- **NLog ובדיקות:** נכתבו (`nlog.config`, תיקיית `EventsApp.Tests`), וטרם הורצו (`dotnet build`, ואז `dotnet test`).
-- **נותר:** הרצה ואימות, ופריסה סופית ל-Render עם PostgreSQL מתארח.
-- **קליינט React:** נכתב (נדרשת הרצת `npm install` ובדיקה בדפדפן).
+- **הושלם:** תשתית (ארכיטקטורה, DB, JWT, Middleware, Swagger, Docker, Seed), כל נקודות הקצה, NLog, קליינט React ופריסת ה-API ל-Render עם PostgreSQL מתארח.
+- **נבדק:** 24 בדיקות אוטומטיות עוברות (`dotnet test`), כולל הזמנה כפולה ומרוץ בין בקשות במקביל (אחת מצליחה, השנייה 409). תהליכי לקוח וספק נבדקו מול מסד אמיתי.
+- **תהליך מנהל** (אישור ספק, שיבוץ, אישור מחיקה): מכוסה ב-`scripts/smoke-test.ps1` ובבדיקות היחידה. הרצת הסקריפט המלא מול סביבה חיה תלויה ברשת שאינה חוסמת את הכתובת.
+- **החלטת עיצוב ב-DTO:** ספק משובץ רואה את שם הלקוח ואת האימייל שלו, כדי שיוכל ליצור קשר לצורך ההפקה.

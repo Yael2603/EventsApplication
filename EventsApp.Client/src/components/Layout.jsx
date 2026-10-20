@@ -46,7 +46,7 @@ export default function Layout() {                      // המעטפת: תפר�
   const onLogout = () => { logout(); navigate('/') }    // מתנתק וחוזר לדף הבית
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${location.pathname === '/' ? 'is-home' : ''}`}>{/* בדף הבית התוכן ברוחב מלא */}
       <header className="navbar">
         <div className="container navbar-inner">
           <Logo />
