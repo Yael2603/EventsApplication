@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using EventsApp.API.Middleware;
 using EventsApp.Application.Abstractions;
 using EventsApp.Application.Mapping;
@@ -13,18 +14,24 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using NLog.Web;                                    // תוסף NLog ל-ASP.NET Core
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();                    // מבטל את ספקי הלוג המובנים, כדי ש-NLog יהיה היחיד
+builder.Host.UseNLog();                             // כל ILogger באפליקציה כותב דרך NLog (קונסול וקובץ), לפי nlog.config
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.Configure<SeedSettings>(builder.Configuration.GetSection(SeedSettings.SectionName));
 
 var jwt = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
 
@@ -37,6 +44,25 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddSingleton<ITokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<DbSeeder>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();                  // שמירה אחת
+builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();  // מאגר לוח
+builder.Services.AddScoped<IEventRepository, EventRepository>();        // מאגר אירועים
+builder.Services.AddScoped<ICalendarService, CalendarService>();        // שירות לוח
+builder.Services.AddScoped<IEventService, EventService>();              // שירות אירועים
+builder.Services.AddScoped<IProviderRepository, ProviderRepository>();          // מאגר ספקים
+builder.Services.AddScoped<IEventItemRepository, EventItemRepository>();        // מאגר סעיפים
+builder.Services.AddScoped<ICandidacyRepository, CandidacyRepository>();        // מאגר מועמדויות
+builder.Services.AddScoped<IProviderService, ProviderService>();                // שירות ספקים
+builder.Services.AddScoped<ICandidacyService, CandidacyService>();              // שירות מועמדויות
+builder.Services.AddScoped<IDeletionRequestRepository, DeletionRequestRepository>();    // מאגר בקשות מחיקה
+builder.Services.AddScoped<IDeletionRequestService, DeletionRequestService>();          // שירות בקשות מחיקה
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();  // מאגר התראות
+builder.Services.AddScoped<INotificationService, NotificationService>();        // שירות התראות
+builder.Services.AddScoped<IStatsRepository, StatsRepository>();                // מאגר ספירות
+builder.Services.AddScoped<IStatsService, StatsService>();                      // שירות ספירות
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -96,6 +122,21 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+var hasConnectionString = !string.IsNullOrWhiteSpace(
+    builder.Configuration.GetConnectionString("DefaultConnection"));
+
+if (hasConnectionString)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<DbSeeder>().SeedAsync();
+}
+else
+{
+    app.Logger.LogWarning("No connection string configured. Skipping migrations and seed.");
+}
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();

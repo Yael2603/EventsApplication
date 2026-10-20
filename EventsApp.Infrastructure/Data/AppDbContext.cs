@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventItem> EventItems => Set<EventItem>();
     public DbSet<Candidacy> Candidacies => Set<Candidacy>();
+    public DbSet<EventDeletionRequest> DeletionRequests => Set<EventDeletionRequest>();     // טבלת בקשות המחיקה
+    public DbSet<Notification> Notifications => Set<Notification>();       // טבלת ההתראות
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -104,10 +106,30 @@ public class AppDbContext : DbContext
 
             e.HasIndex(x => new { x.EventItemId, x.ProviderId }).IsUnique();
         });
+
+        b.Entity<EventDeletionRequest>(e =>
+        {
+            e.Property(x => x.Reason).HasMaxLength(1000);                       // מגבלת אורך
+            e.Property(x => x.AdminNote).HasMaxLength(1000);                    // מגבלת אורך
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20); // נשמר כטקסט קריא
+
+            e.HasOne(x => x.Event).WithMany().HasForeignKey(x => x.EventId)    // קשר לאירוע
+                .OnDelete(DeleteBehavior.Cascade);                              // מחיקת אירוע מוחקת את בקשותיו
+
+            e.HasIndex(x => x.EventId).IsUnique()                               // אינדקס ייחודי על האירוע...
+                .HasFilter("\"Status\" = 'Pending'");                           // ...רק לבקשות ממתינות: לא יותר מאחת ממתינה לאירוע
+        });
+
+        b.Entity<Notification>(e =>
+        {
+            e.Property(x => x.Message).HasMaxLength(500);                       // מגבלת אורך
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)       // קשר למשתמש
+                .OnDelete(DeleteBehavior.Cascade);                              // מחיקת משתמש מוחקת את התראותיו
+            e.HasIndex(x => new { x.UserId, x.IsRead });                        // שליפה מהירה של ההתראות של משתמש
+        });
     }
 
     // PostgreSQL אין rowversion, ולכן Version של CompanyDay מתחלף ידנית בכל עדכון
-    //kvchi
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         RefreshDayVersions();

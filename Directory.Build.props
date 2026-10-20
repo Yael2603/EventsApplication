@@ -1,5 +1,5 @@
 <Project>
-  <!-- הגדרות משותפות לכל הפרויקטים. אם מותקן אצלך .NET 9 או 10, מחליפים כאן את net8.0 (מקום אחד בלבד). -->
+  <!-- הגדרות משותפות לכל הפרויקטים. הפרויקט מכוון ל-.NET 8 (נדרש SDK ו-Runtime בגרסה 8.0.x). שינוי הגרסה כאן דורש לעדכן גם את חבילות 8.0.* -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>

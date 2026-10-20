@@ -139,6 +139,46 @@ namespace EventsApp.Infrastructure.Migrations
                     b.ToTable("Events");
                 });
 
+            modelBuilder.Entity("EventsApp.Domain.Entities.EventDeletionRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.ToTable("DeletionRequests");
+                });
+
             modelBuilder.Entity("EventsApp.Domain.Entities.EventItem", b =>
                 {
                     b.Property<int>("Id")
@@ -173,6 +213,35 @@ namespace EventsApp.Infrastructure.Migrations
                     b.HasIndex("ProviderId");
 
                     b.ToTable("EventItems");
+                });
+
+            modelBuilder.Entity("EventsApp.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("EventsApp.Domain.Entities.Provider", b =>
@@ -307,6 +376,17 @@ namespace EventsApp.Infrastructure.Migrations
                     b.Navigation("Day");
                 });
 
+            modelBuilder.Entity("EventsApp.Domain.Entities.EventDeletionRequest", b =>
+                {
+                    b.HasOne("EventsApp.Domain.Entities.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
             modelBuilder.Entity("EventsApp.Domain.Entities.EventItem", b =>
                 {
                     b.HasOne("EventsApp.Domain.Entities.Category", "Category")
@@ -331,6 +411,17 @@ namespace EventsApp.Infrastructure.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("EventsApp.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("EventsApp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EventsApp.Domain.Entities.Provider", b =>
